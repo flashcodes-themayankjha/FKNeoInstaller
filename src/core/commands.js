@@ -1,7 +1,8 @@
 
 import chalk from 'chalk';
 import Conf from 'conf';
-import { runSetup } from './setup.js'; // your setup flow
+import { runSetup } from './setup.js';
+import { runClean } from './clean.js'; // import your clean command
 
 const config = new Conf({ projectName: 'fkneo-cli' });
 
@@ -22,6 +23,7 @@ ${section('⌘ COMMANDS')}
 
   ${chalk.greenBright('help').padEnd(15)} Print help info
   ${chalk.greenBright('setup').padEnd(15)} Start Neovim configuration setup
+  ${chalk.greenBright('clean').padEnd(15)} Remove prebuilt configs, aliases, and restore backups
   ${chalk.greenBright('reset-auth').padEnd(15)} Clear saved GitHub credentials
   ${chalk.greenBright('quit').padEnd(15)} Exit the CLI
   ${chalk.greenBright('exit').padEnd(15)} Same as quit
@@ -41,8 +43,11 @@ ${section('🛠️ OPTIONS')}
     }
 
     case 'setup':
-      // Run the interactive setup flow
       await runSetup();
+      return false;
+
+    case 'clean':
+      await runClean();
       return false;
 
     case 'reset-auth':

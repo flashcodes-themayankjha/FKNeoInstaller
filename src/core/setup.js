@@ -8,12 +8,11 @@ import os from 'os';
 import path from 'path';
 import { execSync } from 'child_process';
 
-// ---------------- Helpers ----------------
+// ------------------------ Helpers ------------------------
 function getShellRC() {
   const shell = process.env.SHELL || '';
   if (shell.includes('zsh')) return path.join(os.homedir(), '.zshrc');
   if (shell.includes('bash')) return path.join(os.homedir(), '.bashrc');
-  if (shell.includes('fish')) return path.join(os.homedir(), '.config/fish/config.fish');
   return path.join(os.homedir(), '.profile');
 }
 
@@ -31,30 +30,28 @@ function addShellAlias(aliasName, nvimAppName, isMain = false) {
 
   fs.appendFileSync(rcFile, aliasCmds.join('\n') + '\n');
 
-  const spinner = ora('Applying shell aliases...').start();
   try {
-    if (process.env.SHELL.includes('fish')) {
-      execSync(`source ${rcFile}`, { stdio: 'ignore' });
-    } else {
-      execSync(`. ${rcFile}`, { stdio: 'ignore' });
-    }
-    spinner.succeed(chalk.green(' Aliases applied.'));
-  } catch {
-    spinner.succeed(chalk.yellow(' Aliases added. Reload your shell to apply.'));
-  }
+    // Auto-reload shell
+    execSync(`${process.env.SHELL} -c "source ${rcFile}"`, { stdio: 'ignore' });
+  } catch {}
+  console.log(chalk.green(`🔗 Aliases added and shell reloaded (${rcFile})`));
 }
 
 async function cloneRepoWithProgress(repo, targetDir, name) {
-  try {
-    if (fs.existsSync(targetDir)) {
-      const backupDir = targetDir + '.bak';
-      console.log(chalk.yellow(`⚠️ Existing folder detected at ${targetDir}. Backing up to ${backupDir}`));
+  // Backup existing folder if exists
+  if (fs.existsSync(targetDir)) {
+    const backupDir = targetDir + '.bak';
+    console.log(chalk.yellow(`⚠️ Existing folder detected at ${targetDir}. Backing up to ${backupDir}`));
+    try {
+      fs.renameSync(targetDir, backupDir);
+    } catch (err) {
+      // If not empty, remove recursively
+      fs.rmSync(backupDir, { recursive: true, force: true });
       fs.renameSync(targetDir, backupDir);
     }
-    fs.mkdirSync(targetDir, { recursive: true });
-  } catch (err) {
-    throw new Error(`Failed to prepare target directory: ${err.message}`);
   }
+
+  fs.mkdirSync(targetDir, { recursive: true });
 
   const progressBar = new cliProgress.SingleBar({
     format: chalk.cyan('{bar}') + ' {percentage}% | {stage}',
@@ -62,67 +59,61 @@ async function cloneRepoWithProgress(repo, targetDir, name) {
     barIncompleteChar: '░',
     hideCursor: true,
   });
-  progressBar.start(100, 0, { stage: 'Starting clone...' });
+
+  console.log(chalk.blueBright(`\n🔧 Installing ${name}...\n`));
+  progressBar.start(100, 0, { stage: 'Starting...' });
 
   try {
     execSync(`git clone ${repo} "${targetDir}"`, { stdio: 'ignore' });
 
-    // simulate progress
     for (let i = 0; i <= 100; i += 10) {
       progressBar.update(i, { stage: `Cloning ${name}...` });
       await new Promise(r => setTimeout(r, 100));
     }
+
     progressBar.update(100, { stage: `${name} cloned!` });
     progressBar.stop();
+    console.log(chalk.green(`✔ ${name} cloned successfully at ${targetDir}`));
   } catch (err) {
     progressBar.stop();
-    throw new Error(`❌ Failed to clone ${name}: ${err.message}`);
+    console.log(chalk.red(`❌ Failed to clone ${name}: ${err.message}`));
+    throw err;
   }
 }
 
-async function removePrebuilt(aliasName, nvimAppName, main = false) {
-  try {
-    const targetDir = main
-      ? path.join(os.homedir(), '.config', 'nvim')
-      : path.join(os.homedir(), '.config', nvimAppName);
-    if (fs.existsSync(targetDir)) fs.rmSync(targetDir, { recursive: true, force: true });
-    const rcFile = getShellRC();
-    if (fs.existsSync(rcFile)) {
-      const content = fs.readFileSync(rcFile, 'utf-8');
-      const newContent = content
-        .split('\n')
-        .filter(line => !line.includes(`alias ${aliasName}`) && !line.includes('fkall') && !line.includes('fk.config'))
-        .join('\n');
-      fs.writeFileSync(rcFile, newContent);
-      try { execSync(`. ${rcFile}`, { stdio: 'ignore' }); } catch {}
-    }
-    console.log(chalk.green(`✅ Prebuilt config '${aliasName}' removed successfully.`));
-  } catch (err) {
-    console.log(chalk.red(`❌ Failed to remove prebuilt: ${err.message}`));
-  }
-}
-
-// ---------------- Main Setup ----------------
+// ------------------------ Main Setup ------------------------
 export async function runSetup() {
   console.clear();
   console.log(chalk.cyanBright('🧩 FkNeo CLI Setup\n'));
 
-  const section = title => chalk.bgYellow.black.bold(` ${title.toUpperCase()} `);
+  const section = (title) => chalk.bgYellow.black.bold(` ${title.toUpperCase()} `);
 
+  // 1️⃣ Setup type
   console.log(section('SETUP TYPE'));
-  const setupType = await select({
-    message: chalk.yellowBright('Select your setup type:'),
-    choices: [
-      { name: 'Minimal (fast, default config)', value: 'minimal' },
-      { name: 'Prebuilt (FkVim, LazyVim, NVChad, LunarVim)', value: 'prebuilt' },
-      { name: 'Custom (pick plugins and options)', value: 'custom' },
-    ],
-  });
+  let setupType;
+  try {
+    setupType = await select({
+      message: chalk.yellowBright('Select your setup type:'),
+      choices: [
+        { name: 'Minimal (fast, default config)', value: 'minimal' },
+        { name: 'Prebuilt (FkVim, LazyVim, NVChad, LunarVim)', value: 'prebuilt' },
+        { name: 'Custom (pick plugins and options)', value: 'custom' },
+      ],
+    });
+  } catch (err) {
+    if (err.name === 'ExitPromptError') {
+      console.log(chalk.redBright('\n⚠️ Setup aborted by user.\n'));
+      return;
+    }
+    throw err;
+  }
 
-  console.log(chalk.greenBright(`✅ You selected: ${setupType} setup\n`));
+  console.log(chalk.greenBright(`\n✅ You selected: ${setupType} setup\n`));
 
+  // ---------------- Prebuilt Flow ----------------
   if (setupType === 'prebuilt') {
     console.log(section('SELECT PREBUILT CONFIG'));
+
     const choice = await select({
       message: chalk.yellowBright('Select a Prebuilt config:'),
       choices: [
@@ -134,10 +125,10 @@ export async function runSetup() {
     });
 
     const mainOrAlias = await select({
-      message: chalk.yellowBright('Use as main Neovim config?'),
+      message: chalk.yellowBright('Do you want to use this as your main Neovim config?'),
       choices: [
-        { name: 'Yes (~/.config/nvim)', value: true },
-        { name: 'No, create alias', value: false },
+        { name: 'Yes, main config (~/.config/nvim)', value: true },
+        { name: 'No, create custom alias', value: false },
       ],
     });
 
@@ -148,18 +139,21 @@ export async function runSetup() {
       lunarvim: { name: 'LunarVim', repo: 'https://github.com/LunarVim/LunarVim', appName: 'lunarvim' },
     };
 
-    const cfg = prebuiltConfigs[choice];
-    cfg.main = mainOrAlias;
+    const selectedConfig = prebuiltConfigs[choice];
+    selectedConfig.main = mainOrAlias;
 
     if (!mainOrAlias) {
-      const aliasName = await input({ message: `Enter alias name for ${cfg.name} config:`, default: cfg.appName });
-      cfg.appName = aliasName.trim();
+      const aliasName = await input({
+        message: `Enter alias name for ${selectedConfig.name} config:`,
+        default: selectedConfig.appName,
+      });
+      selectedConfig.appName = aliasName.trim();
     }
 
-    // FkVim + FkAi
+    // FkVim + FkAi check
     if (choice === 'fkvim') {
       const fkAiChoice = await select({
-        message: chalk.yellowBright('Use FkAi with FkVim?'),
+        message: chalk.yellowBright('Do you want to use FkAi with FkVim?'),
         choices: [
           { name: 'Yes', value: true },
           { name: 'No', value: false },
@@ -167,8 +161,11 @@ export async function runSetup() {
       });
 
       if (fkAiChoice) {
-        try { execSync('gemini --version', { stdio: 'ignore' }); }
-        catch {
+        try {
+          execSync('gemini --version', { stdio: 'ignore' });
+          console.log(chalk.green('✅ Gemini CLI detected.'));
+        } catch {
+          console.log(chalk.blue('⚡ Installing Gemini CLI...'));
           const spinner = ora('Installing Gemini CLI...').start();
           execSync('npm install -g gemini-cli', { stdio: 'ignore' });
           spinner.succeed(chalk.green('✅ Gemini CLI installed.'));
@@ -176,26 +173,24 @@ export async function runSetup() {
       }
     }
 
-    // Target directory
-    const targetDir = cfg.main ? path.join(os.homedir(), '.config', 'nvim') : path.join(os.homedir(), '.config', cfg.appName);
+    // Determine target directory
+    const targetDir = selectedConfig.main
+      ? path.join(os.homedir(), '.config', 'nvim')
+      : path.join(os.homedir(), '.config', selectedConfig.appName);
 
-    // Clone repo with progress bar
-    await cloneRepoWithProgress(cfg.repo, targetDir, cfg.name);
+    // Clone with progress
+    await cloneRepoWithProgress(selectedConfig.repo, targetDir, selectedConfig.name);
 
-    // Post-clone steps
-    const spinnerSetup = ora('Setting up Neovim...').start();
-    await new Promise(r => setTimeout(r, 1000));
-    spinnerSetup.succeed(chalk.green('✅ Neovim setup complete.'));
+    // Add aliases
+    addShellAlias(selectedConfig.appName, selectedConfig.appName, selectedConfig.main);
 
-    addShellAlias(cfg.appName, cfg.appName, cfg.main);
-
-    const depSpinner = ora('Installing plugins/dependencies...').start();
-    await new Promise(r => setTimeout(r, 1500)); // simulate plugin install
-    depSpinner.succeed(chalk.green('✅ Plugins installed.'));
-
-    console.log(chalk.greenBright(`\n🎉 Setup complete! Use 'nvim'${!cfg.main ? ` or '${cfg.appName}'` : ''} to launch.`));
+    console.log(chalk.greenBright(`\n🎉 Setup complete! Use 'nvim'${!selectedConfig.main ? ` or '${selectedConfig.appName}'` : ''} to launch.`));
     return;
   }
 
-  console.log(chalk.blueBright('🧩 Minimal/Custom setup not implemented yet.'));
+  // ---------------- Minimal / Custom Flow ----------------
+  if (setupType === 'minimal' || setupType === 'custom') {
+    console.log(chalk.blueBright('🧩 Minimal/Custom setup not implemented yet.\n'));
+    return;
+  }
 }
