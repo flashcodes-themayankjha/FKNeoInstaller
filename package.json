@@ -17,7 +17,9 @@
     "chalk-animation": "^2.0.3",
     "cli-progress": "^3.12.0",
     "conf": "^15.0.2",
+    "fs-extra": "^11.3.2",
     "open": "^10.2.0",
     "ora": "^8.2.0"
   }
 }
+  
