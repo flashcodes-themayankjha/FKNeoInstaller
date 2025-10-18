@@ -9,16 +9,16 @@ import os from 'os';
 import path from 'path';
 import { spawn, execSync } from 'child_process';
 
-// Get package version dynamically
-const packageJsonPath = path.resolve(process.cwd(), 'package.json');
+// ---------------- Package Version ----------------
 let version = 'v0.0.0';
 try {
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  const packageJson = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8'));
   version = `v${packageJson.version}`;
-} catch (err) {
-  console.error(chalk.redBright('🚧 Could not read package.json for version.'));
+} catch {
+  console.log(chalk.redBright('🚧 Could not read package.json version.'));
 }
 
+// ---------------- Helpers ----------------
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function getShellRC() {
@@ -38,7 +38,6 @@ function writeMetadata(data) {
 function addShellAlias(aliasName, nvimAppName, isMain = false) {
   const rcFile = getShellRC();
   if (!fs.existsSync(rcFile)) return;
-
   const aliasCmds = [];
   if (!isMain) {
     aliasCmds.push(`alias ${aliasName}='NVIM_APPNAME="${nvimAppName}" nvim'`);
@@ -46,16 +45,16 @@ function addShellAlias(aliasName, nvimAppName, isMain = false) {
     aliasCmds.push(`alias fkall='nvim .'`);
     aliasCmds.push(`alias fk.config='nvim ~/.config/nvim/'`);
   }
-
   fs.appendFileSync(rcFile, aliasCmds.join('\n') + '\n');
   console.log(chalk.green(`🔗 Aliases added to ${rcFile}`));
   console.log(chalk.cyan(`ℹ️ Run 'source ${rcFile}' or restart your terminal to apply changes.`));
 }
 
+// ---------------- Handle Existing Config ----------------
 async function handleExistingConfig(targetDir, aliasName) {
   if (!fs.existsSync(targetDir)) return aliasName;
 
-  console.log(chalk.yellowBright(`⚠️  Config already exists at ${targetDir}`));
+  console.log(chalk.yellowBright(`⚠️ Config already exists at ${targetDir}`));
   const choice = await select({
     message: 'Choose an action:',
     choices: [
@@ -76,47 +75,51 @@ async function handleExistingConfig(targetDir, aliasName) {
   } else if (choice === 'rename') {
     const newAlias = await input({ message: 'Enter new alias name:', default: aliasName });
     const newTargetDir = path.join(os.homedir(), '.config', newAlias.trim());
-    return await handleExistingConfig(newTargetDir, newAlias.trim());
+    return await handleExistingConfig(newTargetDir, newAlias.trim()); // recursive check
   }
   return aliasName;
 }
 
+// ---------------- Git Clone with Dynamic Progress ----------------
 async function cloneRepoWithProgress(repo, targetDir, name) {
-  const bar = new cliProgress.SingleBar({
-    format: '{bar} {percentage}% | {task}',
-    barCompleteChar: '█',
-    barIncompleteChar: '░',
-    hideCursor: true,
-  });
-
-  bar.start(100, 0, { task: `Cloning ${name}...` });
-
   if (!fs.existsSync(path.dirname(targetDir))) fs.mkdirSync(path.dirname(targetDir), { recursive: true });
+  console.log(chalk.cyan(`\n📦 Cloning ${name} into ${targetDir}...\n`));
+
+  const bar = new cliProgress.MultiBar({
+    clearOnComplete: false,
+    hideCursor: false,
+    format: '{bar} {percentage}% | {task}',
+  }, cliProgress.Presets.shades_classic);
+
+  const overall = bar.create(100, 0, { task: 'Overall Progress' });
+  const cloneBar = bar.create(100, 0, { task: `${name} Cloning` });
 
   return new Promise((resolve, reject) => {
     const git = spawn('git', ['clone', '--progress', repo, targetDir]);
-
-    let fakeProgress = 0;
-    const interval = setInterval(() => {
-      if (fakeProgress < 50) fakeProgress += Math.random() * 5;
-      bar.update(Math.min(fakeProgress, 50));
-    }, 200);
+    let lastPercent = 0;
 
     git.stderr.on('data', (data) => {
-      const text = data.toString();
-      if (text.includes('Receiving objects')) fakeProgress = 50 + Math.random() * 30;
-      if (text.includes('Resolving deltas')) fakeProgress = 80 + Math.random() * 15;
-      bar.update(Math.min(fakeProgress, 95));
+      const str = data.toString();
+      const match = str.match(/Receiving objects:\s+(\d+)%/);
+      if (match) {
+        const percent = parseInt(match[1]);
+        if (percent > lastPercent) {
+          lastPercent = percent;
+          cloneBar.update(percent);
+          overall.update(percent * 0.3); // cloning counts as 30% overall
+        }
+      }
     });
 
     git.on('close', (code) => {
-      clearInterval(interval);
-      bar.update(100, { task: `${name} cloned successfully` });
-      bar.stop();
       if (code === 0) {
-        console.log(chalk.green(`✔ ${name} cloned at ${targetDir}`));
+        cloneBar.update(100);
+        overall.update(30);
+        bar.stop();
+        console.log(chalk.green(`✔ ${name} cloned successfully at ${targetDir}\n`));
         resolve();
       } else {
+        bar.stop();
         console.log(chalk.red(`❌ Failed to clone ${name}`));
         reject(new Error('Git clone failed'));
       }
@@ -124,6 +127,7 @@ async function cloneRepoWithProgress(repo, targetDir, name) {
   });
 }
 
+// ---------------- Gemini Installer ----------------
 async function installGemini() {
   const spinner = ora('Installing Gemini CLI...').start();
   try {
@@ -134,18 +138,20 @@ async function installGemini() {
   }
 }
 
+// ---------------- Multi-level Plugin Installation ----------------
 async function multiLevelPluginInstall(targetDir) {
   const spinner = ora('Detecting package manager...').start();
   await sleep(700);
   spinner.succeed(chalk.green('✔ Detected package manager: Lazy.nvim'));
 
-  const bar = new cliProgress.SingleBar({
+  const bar = new cliProgress.MultiBar({
+    clearOnComplete: false,
+    hideCursor: false,
     format: '{bar} {percentage}% | {task}',
-    barCompleteChar: '█',
-    barIncompleteChar: '░',
-    hideCursor: true,
-  });
-  bar.start(100, 0, { task: 'Initializing...' });
+  }, cliProgress.Presets.shades_classic);
+
+  const overall = bar.create(100, 30, { task: 'Overall Progress' }); // 30% after clone
+  const pluginBar = bar.create(100, 0, { task: 'Initializing...' });
 
   const pluginGroups = [
     { name: 'Basic Plugins', percent: 25 },
@@ -156,17 +162,20 @@ async function multiLevelPluginInstall(targetDir) {
 
   for (const group of pluginGroups) {
     console.log(`➡️ Installing ${group.name}...`);
-    await sleep(500 + Math.random() * 800);
-    bar.update(group.percent, { task: group.name });
+    await sleep(800 + Math.random() * 700);
+    pluginBar.update(group.percent, { task: group.name });
+    overall.update(30 + group.percent * 0.7); // 30% clone + plugin percentage
     console.log(chalk.green(`✔ ${group.name} installed.`));
   }
 
   bar.stop();
   console.log(chalk.green('🎉 All plugin systems installed!'));
 
+  // Actually run Lazy.nvim sync
   execSync(`NVIM_APPNAME="${path.basename(targetDir)}" nvim --headless "+Lazy! sync" +qa`, { stdio: 'inherit' });
 }
 
+// ---------------- Step UI ----------------
 async function showStep(number, total, label) {
   const catppuccinYellow = '#f9e2af';
   const badge = chalk.bgHex(catppuccinYellow).black.bold(`[Step ${number}/${total}]`);
@@ -174,9 +183,10 @@ async function showStep(number, total, label) {
   await sleep(250);
 }
 
+// ---------------- Main ----------------
 export async function runSetup() {
   console.clear();
-  console.log(chalk.bgYellow.black.bold(`\n🧩 FkNeoInstaller ${version}  \n`));
+  console.log(chalk.black.bgYellow.bold(`\n🧩 FkNeoInstaller ${version}\n`));
 
   try {
     await showStep(1, 4, 'Select Setup Type');
@@ -216,7 +226,6 @@ export async function runSetup() {
         nvchad: { name: 'NVChad', repo: 'https://github.com/NvChad/NvChad', appName: 'nvchad' },
         lunarvim: { name: 'LunarVim', repo: 'https://github.com/LunarVim/LunarVim', appName: 'lunarvim' },
       };
-
       const selectedConfig = prebuiltConfigs[choice];
       selectedConfig.main = mainOrAlias;
 
@@ -225,12 +234,14 @@ export async function runSetup() {
           message: `Enter alias name for ${selectedConfig.name} config:`,
           default: selectedConfig.appName,
         });
-        aliasName = aliasName.trim();
-        selectedConfig.appName = await handleExistingConfig(
-          path.join(os.homedir(), '.config', aliasName),
-          aliasName
+        aliasName = await handleExistingConfig(
+          path.join(os.homedir(), '.config', aliasName.trim()),
+          aliasName.trim()
         );
+        selectedConfig.appName = aliasName;
       } else {
+        // main nvim
+        await handleExistingConfig(path.join(os.homedir(), '.config', 'nvim'), 'nvim');
         selectedConfig.appName = 'nvim';
       }
 
@@ -267,12 +278,13 @@ export async function runSetup() {
         nvimAlias: selectedConfig.main ? 'nvim' : selectedConfig.appName,
       });
 
-      // ✅ Summary Table
+      // ---------------- Summary Table ----------------
       const table = new Table({
         head: ['Config', 'Value'],
-        colWidths: [20, 60],
-        style: { head: ['yellow'] },
+        colWidths: [20, 50],
+        style: { head: ['cyan'] },
       });
+
       table.push(
         ['Config', selectedConfig.name],
         ['Main', selectedConfig.main ? 'Yes' : 'No'],
@@ -281,10 +293,11 @@ export async function runSetup() {
         ['Location', targetDir],
         ['Launch', selectedConfig.main ? 'nvim' : selectedConfig.appName]
       );
-      console.log(chalk.bgYellow.black.bold('\nSummary\n'));
+
+      console.log(chalk.bgYellow.black('\n FkNeoInstaller Summary \n'));
       console.log(table.toString());
 
-      console.log(chalk.greenBright('\n🎉 Setup Complete!'));
+      console.log(chalk.greenBright('\n🎉 Setup Complete!\n'));
     }
   } catch (err) {
     if (err.name === 'ExitPromptError') {
