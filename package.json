@@ -21,5 +21,10 @@
     "open": "^10.2.0",
     "ora": "^8.2.0",
     "url": "^0.11.4"
-  }
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "author": "Mayank Kumar Jha"
 }
