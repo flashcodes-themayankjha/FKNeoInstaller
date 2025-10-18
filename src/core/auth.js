@@ -60,7 +60,7 @@ export async function authenticateUser() {
   }
 
   const repoOwner = 'flashcodes-themayankjha';
-  const repoName = 'FkNeoInstaller-cli';
+  const repoName = 'fkneo-cli';
   const repoUrl = `https://github.com/${repoOwner}/${repoName}`;
   const starCheckUrl = `https://api.github.com/user/starred/${repoOwner}/${repoName}`;
 
