@@ -1,11 +1,11 @@
-# fkneo-cli
+# FkNeoInstaller-cli
 
 <p align="center">
-  <a href="https://github.com/flashcodes-themayankjha/fkneo-cli">
-    <img src="https://img.shields.io/github/stars/flashcodes-themayankjha/fkneo-cli.svg?style=social" alt="GitHub Stars">
+  <a href="https://github.com/flashcodes-themayankjha/FkNeoInstaller-cli">
+    <img src="https://img.shields.io/github/stars/flashcodes-themayankjha/FkNeoInstaller-cli.svg?style=social" alt="GitHub Stars">
   </a>
-  <a href="https://www.npmjs.com/package/fkneo-cli">
-    <img src="https://img.shields.io/npm/v/fkneo-cli.svg" alt="npm version">
+  <a href="https://www.npmjs.com/package/FkNeoInstaller-cli">
+    <img src="https://img.shields.io/npm/v/FkNeoInstaller-cli.svg" alt="npm version">
   </a>
 </p>
 
@@ -15,9 +15,9 @@
 
 ---
 
-## Why fkneo-cli?
+## Why FkNeoInstaller-cli?
 
-`fkneo-cli` is a command-line interface tool designed to simplify the setup and management of your Neovim configuration. Whether you're a seasoned Neovim user or just starting, `fkneo-cli` helps you get up and running with a powerful and customized Neovim environment in minutes.
+`FkNeoInstaller-cli` is a command-line interface tool designed to simplify the setup and management of your Neovim configuration. Whether you're a seasoned Neovim user or just starting, `FkNeoInstaller-cli` helps you get up and running with a powerful and customized Neovim environment in minutes.
 
 ## Features
 
@@ -28,10 +28,10 @@
 
 ## Installation
 
-Install `fkneo-cli` globally using npm:
+Install `FkNeoInstaller-cli` globally using npm:
 
 ```bash
-npm install -g fkneo-cli
+npm install -g FkNeoInstaller-cli
 ```
 
 ## Usage
@@ -42,7 +42,7 @@ Once installed, you can start the interactive CLI by running:
 fkneo
 ```
 
-This will launch the `fkneo-cli` and you can start using the commands.
+This will launch the `FkNeoInstaller-cli` and you can start using the commands.
 
 ## Commands
 
@@ -57,7 +57,7 @@ This will launch the `fkneo-cli` and you can start using the commands.
 
 ## Configuration
 
-`fkneo-cli` stores its configuration in a file named `config.json` in your system's default configuration directory. To clear the configuration, you can use the `reset-auth` command.
+`FkNeoInstaller-cli` stores its configuration in a file named `config.json` in your system's default configuration directory. To clear the configuration, you can use the `reset-auth` command.
 
 ## Contributing
 
