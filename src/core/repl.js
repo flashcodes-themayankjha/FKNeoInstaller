@@ -1,18 +1,17 @@
 import readline from 'readline';
-import { authenticateUser } from './auth.js';
 import { handleCommand } from './commands.js';
+import chalk from 'chalk';
 
 export async function startRepl() {
-  console.log("\nWelcome to FkNeo CLI! Type 'help' for options.\n");
+  console.log(`
+Welcome to FkNeo CLI! Type ${chalk.green('help')} ❓ for options. 
+`);
 
-  await authenticateUser();
-
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    prompt: 'fkneo> ',
-  });
-
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  prompt: `${chalk.yellow('FkNeo')} ${chalk.green('»')} `,
+});
   rl.prompt();
 
   rl.on('line', async (line) => {
