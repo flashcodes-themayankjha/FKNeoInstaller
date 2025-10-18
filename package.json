@@ -9,10 +9,6 @@
   "scripts": {
     "start": "node ./bin/fkneo.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/flashcodes-themayankjha/FkNeoInstaller-cli.git"
-  },
   "dependencies": {
     "@inquirer/prompts": "^5.5.0",
     "@inquirer/select": "^4.4.0",
