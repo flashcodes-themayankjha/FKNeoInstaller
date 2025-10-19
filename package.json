@@ -26,5 +26,23 @@
     "bin",
     "src"
   ],
-  "author": "Mayank Kumar Jha"
+  "author": "Mayank Kumar Jha",
+  "license": "MIT",
+  "keywords": [
+    "neovim",
+    "cli",
+    "wizard",
+    "setup",
+    "config",
+    "fkneo",
+    "fkvim"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flashcodes-themayankjha/fkneo-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/flashcodes-themayankjha/fkneo-cli/issues"
+  },
+  "homepage": "https://github.com/flashcodes-themayankjha/fkneo-cli#readme"
 }
