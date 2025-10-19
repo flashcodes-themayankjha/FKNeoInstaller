@@ -7,7 +7,7 @@
     "fkneo": "./bin/fkneo.js"
   },
   "scripts": {
-    "start": "node ./bin/fkneo.js"
+    "start": "node ./src/index.js"
   },
   "dependencies": {
     "@inquirer/prompts": "^5.5.0",
@@ -24,10 +24,7 @@
     "ora": "^8.2.0",
     "url": "^0.11.4"
   },
-  "files": [
-    "bin",
-    "src"
-  ],
+  "files": [ "src" ],
   "author": "Mayank Kumar Jha",
   "license": "MIT",
   "keywords": [
