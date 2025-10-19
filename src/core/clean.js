@@ -102,47 +102,55 @@ async function cleanupSingle(entry) {
 
 // ---------------- Main ----------------
 export async function runClean() {
-  console.clear();
-  console.log(chalk.bgYellow.black.bold('\n [CLEANUP STARTED] ') + chalk.cyanBright(' 🧹 FkNeo CLI - Clean Prebuilt Setups\n'));
+  try {
+    console.clear();
+    console.log(chalk.bgYellow.black.bold('\n [CLEANUP STARTED] ') + chalk.cyanBright(' 🧹 FkNeo CLI - Clean Prebuilt Setups\n'));
 
-  const meta = getMeta();
+    const meta = getMeta();
 
-  if (!meta.length) {
-    console.log(chalk.gray('No prebuilt configurations detected in meta.json.\n'));
-    return;
+    if (!meta.length) {
+      console.log(chalk.gray('No prebuilt configurations detected in meta.json.\n'));
+      return;
+    }
+
+    const choices = [
+      ...meta.map(entry => ({
+        name: `${entry.prebuilt || entry.alias} (${entry.alias || entry.prebuilt})`,
+        value: entry,
+      })),
+      { name: '🧹 Remove ALL', value: 'all' },
+    ];
+
+    const selected = await select({
+      message: chalk.yellow('Select a prebuild to clean:'),
+      choices,
+    });
+
+    const spinner = ora('Preparing cleanup...').start();
+    await new Promise(r => setTimeout(r, 300));
+    spinner.stop();
+
+    const targets = selected === 'all' ? meta : [selected];
+    for (const entry of targets) {
+      await cleanupSingle(entry);
+    }
+
+    // Update meta.json
+    const newMeta = selected === 'all'
+      ? []
+      : meta.filter(m => !targets.some(t => t.alias === m.alias));
+
+    const metaPath = path.join(os.homedir(), '.fkneo', 'meta.json');
+    fs.writeFileSync(metaPath, JSON.stringify(newMeta, null, 2), 'utf8');
+
+    console.log(chalk.greenBright('\n🎉 Clean operation finished.\n'));
+  } catch (err) {
+    if (err && err.name === 'ExitPromptError') {
+      console.log(chalk.redBright('\n⚠️ Cleanup aborted by user.\n'));
+      return;
+    }
+    console.error(chalk.red('❌ Unexpected error:'), err && err.message ? err.message : err);
   }
-
-  const choices = [
-    ...meta.map(entry => ({
-      name: `${entry.prebuilt || entry.alias} (${entry.alias || entry.prebuilt})`,
-      value: entry,
-    })),
-    { name: '🧹 Remove ALL', value: 'all' },
-  ];
-
-  const selected = await select({
-    message: chalk.yellow('Select a prebuild to clean:'),
-    choices,
-  });
-
-  const spinner = ora('Preparing cleanup...').start();
-  await new Promise(r => setTimeout(r, 300));
-  spinner.stop();
-
-  const targets = selected === 'all' ? meta : [selected];
-  for (const entry of targets) {
-    await cleanupSingle(entry);
-  }
-
-  // Update meta.json
-  const newMeta = selected === 'all'
-    ? []
-    : meta.filter(m => !targets.some(t => t.alias === m.alias));
-
-  const metaPath = path.join(os.homedir(), '.fkneo', 'meta.json');
-  fs.writeFileSync(metaPath, JSON.stringify(newMeta, null, 2), 'utf8');
-
-  console.log(chalk.greenBright('\n🎉 Clean operation finished.\n'));
 }
 
 // Run directly
