@@ -46,14 +46,14 @@ This will launch the `fkneo-cli` and you can start using the commands.
 
 ## Commands
 
-| Command      | Description                                                 |
-|--------------|-------------------------------------------------------------|
-| `help`       | Print help info                                             |
-| `setup`      | Start Neovim configuration setup                            |
-| `clean`      | Remove prebuilt configs, aliases, and restore backups       |
-| `reset-auth` | Clear saved GitHub credentials                              |
-| `quit`       | Exit the CLI                                                |
-| `exit`       | Same as quit                                                |
+| Command      | Description                                           |
+| ------------ | ----------------------------------------------------- |
+| `help`       | Print help info                                       |
+| `setup`      | Start Neovim configuration setup                      |
+| `clean`      | Remove prebuilt configs, aliases, and restore backups |
+| `reset-auth` | Clear saved GitHub credentials                        |
+| `quit`       | Exit the CLI                                          |
+| `exit`       | Same as quit                                          |
 
 ## Configuration
 
