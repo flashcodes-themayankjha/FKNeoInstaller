@@ -27,7 +27,7 @@ export async function startBanner(username) {
   console.log(tagline);
 
   // 2️⃣ Dynamic info box: version and tagline
-  const packageJsonPath = path.resolve(process.cwd(), 'package.json');
+  const packageJsonPath = path.resolve(path.dirname(import.meta.url.replace('file://', '')), '../../package.json');
   let version = 'v0.0.0';
   try {
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
