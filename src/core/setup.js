@@ -18,7 +18,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // --- read package.json version from project root ---
 let version = '0.0.0';
 try {
-  const pkg = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8'));
+  const pkg = JSON.parse(fs.readFileSync(path.resolve(path.dirname(import.meta.url.replace('file://', '')), '../../package.json'), 'utf8'));
   version = pkg.version || version;
 } catch {
   /* ignore */
