@@ -1,34 +1,38 @@
-import fs from "fs";
-import os from "os";
-import path from "path";
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import chalk from 'chalk';
 
-export function writeMetadata(entry) {
-  const fkneoDir = path.join(os.homedir(), ".fkneo");
-  const metaPath = path.join(fkneoDir, "meta.json");
+export function writeMetadata(newData) {
+  const metaPath = path.join(os.homedir(), '.fkneo', 'meta.json');
+  fs.mkdirSync(path.dirname(metaPath), { recursive: true });
 
-  if (!fs.existsSync(fkneoDir)) fs.mkdirSync(fkneoDir, { recursive: true });
+  let meta = [];
 
-  let metaData = [];
+  // If existing meta.json exists, read it safely
   if (fs.existsSync(metaPath)) {
     try {
-      const raw = fs.readFileSync(metaPath, "utf8");
-      metaData = JSON.parse(raw || "[]");
-    } catch {
-      metaData = [];
+      const fileContent = fs.readFileSync(metaPath, 'utf8').trim();
+      if (fileContent.startsWith('[')) {
+        meta = JSON.parse(fileContent);
+      } else if (fileContent) {
+        // If old format was a single object, wrap it into an array
+        meta = [JSON.parse(fileContent)];
+      }
+    } catch (err) {
+      console.log(chalk.red('⚠️ Failed to parse existing meta.json, recreating...'));
+      meta = [];
     }
   }
 
-  metaData.push({
-    prebuilt: entry.config,
-    main: entry.main,
-    alias: entry.alias,
-    targetDir: entry.location,
-    aiEnabled: entry.aiEnabled,
-    method: entry.method,
-    installedAt: new Date().toISOString(),
-  });
+  // If alias already exists, replace that entry
+  const existingIndex = meta.findIndex(entry => entry.alias === newData.alias);
+  if (existingIndex !== -1) {
+    meta[existingIndex] = newData;
+  } else {
+    meta.push(newData);
+  }
 
-  fs.writeFileSync(metaPath, JSON.stringify(metaData, null, 2));
-  console.log(`💾 Metadata updated at ${metaPath}`);
+  // Write array back to file, pretty-printed
+  fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2), 'utf8');
 }
-
