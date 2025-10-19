@@ -31,11 +31,43 @@ function getShellRC() {
   return path.join(os.homedir(), '.profile');
 }
 
-function writeMetadata(obj) {
+
+function writeMetadata(newData) {
   const metaPath = path.join(os.homedir(), '.fkneo', 'meta.json');
   fs.mkdirSync(path.dirname(metaPath), { recursive: true });
-  fs.writeFileSync(metaPath, JSON.stringify(obj, null, 2), 'utf8');
+
+  let meta = [];
+
+  // If existing meta.json exists, read it safely
+  if (fs.existsSync(metaPath)) {
+    try {
+      const fileContent = fs.readFileSync(metaPath, 'utf8').trim();
+      if (fileContent.startsWith('[')) {
+        meta = JSON.parse(fileContent);
+      } else if (fileContent) {
+        // If old format was a single object, wrap it into an array
+        meta = [JSON.parse(fileContent)];
+      }
+    } catch (err) {
+      console.log(chalk.red('⚠️ Failed to parse existing meta.json, recreating...'));
+      meta = [];
+    }
+  }
+
+  // If alias already exists, replace that entry
+  const existingIndex = meta.findIndex(entry => entry.alias === newData.alias);
+  if (existingIndex !== -1) {
+    meta[existingIndex] = newData;
+  } else {
+    meta.push(newData);
+  }
+
+  // Write array back to file, pretty-printed
+  fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2), 'utf8');
 }
+
+
+
 
 function addShellAlias(aliasName, nvimAppName, isMain = false) {
   const rcFile = getShellRC();
@@ -194,76 +226,98 @@ async function installGemini() {
 }
 
 // ------------- Multi-line plugin installation (groups + per-plugin) -------------
-async function installPluginsWithDetailedProgress(targetDir) {
-  console.log(chalk.cyan('\n📦 Installing plugin groups and individual plugins (visual progress)...\n'));
 
+// ------------- Multi-line plugin installation (groups + per-plugin) -------------
+async function installPluginsWithDetailedProgress(targetDir) {
+  const flamingo = '#F28FB0'; // group text
+  const cyan = '#00FFFF'; // cyan glow for progress
+  const peach = '#F9E2AF'; // badge bg
+  const softLavender = '#b4befe';
+
+  console.log(chalk.cyan('\n📦 Installing plugin groups and individual plugins...\n'));
+
+  // Initialize overall progress bar
   const mb = new cliProgress.MultiBar({
     clearOnComplete: false,
     hideCursor: true,
-    format: '{bar} {percentage}% | {task}',
+    format: chalk.hex(cyan)('{bar}') + ' {percentage}% | {meta}',
+    barCompleteChar: '█',
+    barIncompleteChar: '░',
+    barsize: 30,
+    autopadding: true,
   }, cliProgress.Presets.shades_classic);
 
-  // overall starts at 30 (clone done)
-  const overall = mb.create(100, 30, { task: chalk.bgYellow.black(' Overall Progress ') });
+  const overall = mb.create(100, 0, { meta: 'Overall Progress' });
 
-  // group definitions (weights sum to 70 to complement 30 from clone)
+  // Group structure
   const groups = [
-    { name: 'Basic Plugins', plugins: ['nvim-tree.lua', 'telescope.nvim', 'which-key.nvim'], weight: 18 },
-    { name: 'LSP + Dependencies', plugins: ['mason.nvim', 'mason-lspconfig.nvim', 'cmp-nvim-lsp'], weight: 18 },
-    { name: 'FkNotes + Themes', plugins: ['fknotes.nvim', 'catppuccin', 'tokyonight.nvim'], weight: 17 },
-    { name: 'Treesitter', plugins: ['nvim-treesitter', 'nvim-treesitter-textobjects'], weight: 17 },
+    { name: 'Basic Plugins', plugins: ['nvim-tree.lua', 'telescope.nvim', 'which-key.nvim'], weight: 20 },
+    { name: 'LSP + Dependencies', plugins: ['mason.nvim', 'mason-lspconfig.nvim', 'cmp-nvim-lsp'], weight: 20 },
+    { name: 'FkNotes + Themes', plugins: ['fknotes.nvim', 'catppuccin', 'tokyonight.nvim'], weight: 20 },
+    { name: 'Treesitter', plugins: ['nvim-treesitter', 'nvim-treesitter-textobjects'], weight: 20 },
   ];
 
-  let overallProgress = 30;
+  let overallProgress = 0;
 
   for (const group of groups) {
-    console.log(chalk.cyan(`\n➡️ Installing group: ${group.name}\n`));
+    const badge = chalk.bgHex(peach).black.bold(' Installing plugin: ');
+    console.log('\n' + badge + ' ' + chalk.hex(flamingo).bold(group.name) + '\n');
+    await sleep(150);
 
-    // create bars for each plugin
-    const pluginBars = group.plugins.map(p => mb.create(100, 0, { task: chalk.yellow(p) }));
+    for (const plugin of group.plugins) {
+      const totalChunks = 150 + Math.floor(Math.random() * 300);
+      let doneChunks = 0;
+      let percentage = 0;
 
-    for (let i = 0; i < group.plugins.length; ++i) {
-      const plugin = group.plugins[i];
-      const bar = pluginBars[i];
+      // create cyan progress bar
+      const pluginBar = mb.create(100, 0, {
+        meta: `0/${totalChunks} Chunks || Speed: 0.00Mb/s || ...`,
+      });
 
-      // simulate live progress for nicer UX (but we will run real sync afterwards)
-      let p = 0;
-      while (p < 100) {
-        await sleep(120 + Math.random() * 200);
-        const inc = Math.floor(5 + Math.random() * 15);
-        p = Math.min(100, p + inc);
-        const taskLabel = p < 100 ? chalk.yellow(plugin) : chalk.green(plugin);
-        bar.update(p, { task: taskLabel });
+      // fast glide updates (~50–120ms)
+      while (percentage < 100) {
+        const chunkStep = 5 + Math.floor(Math.random() * 25);
+        doneChunks = Math.min(totalChunks, doneChunks + chunkStep);
+        percentage = Math.min(100, Math.round((doneChunks / totalChunks) * 100));
+        const speed = (3 + Math.random() * 7).toFixed(2);
 
-        // update overall: progress of this group is proportional to its weight and plugin progress
-        const groupBase = (group.weight * (i / group.plugins.length));
-        const groupProgress = group.weight * (p / group.plugins.length) / 100;
-        overall.update(Math.min(100, Math.round(overallProgress + groupBase + groupProgress)));
+        pluginBar.update(percentage, {
+          meta: `${doneChunks}/${totalChunks} Chunks || Speed: ${speed}Mb/s || ${chalk.green('✔')} ${chalk.hex(softLavender)(plugin)}`,
+        });
+
+        // update overall progress
+        const groupWeight = group.weight / group.plugins.length;
+        overallProgress = Math.min(100, overallProgress + groupWeight * (chunkStep / totalChunks) * 2);
+        overall.update(overallProgress, { meta: chalk.gray('Progress...') });
+
+        await sleep(50 + Math.random() * 70);
       }
 
-      bar.update(100, { task: chalk.green(plugin) });
-      console.log(chalk.green(`✔ ${plugin} installed.`));
+      pluginBar.update(100, {
+        meta: `${totalChunks}/${totalChunks} Chunks || Speed: 0.00Mb/s || ${chalk.green('✔')} ${chalk.hex(softLavender)(plugin)} installed.`,
+      });
+      pluginBar.stop();
+      await sleep(120);
     }
 
-    overallProgress = Math.min(100, overallProgress + group.weight);
-    overall.update(overallProgress);
+    overall.update(Math.min(100, overallProgress + group.weight / 2));
+    console.log(chalk.hex(flamingo)(`↳ Finished group: ${group.name}\n`));
   }
 
+  overall.update(100, { meta: chalk.green('Complete') });
   mb.stop();
 
-  // Now run the real headless sync to actually install plugins (Lazy.nvim)
   console.log(chalk.cyan('\n[Plugins] Running headless Lazy.nvim sync (this will actually install plugins)...'));
   try {
-    // Use inherit to allow user to see errors if something goes wrong; can switch to 'ignore' if too noisy
     execSync(`NVIM_APPNAME="${path.basename(targetDir)}" nvim --headless "+Lazy! sync" +qa`, { stdio: 'inherit' });
     console.log(chalk.green('✔ Lazy.nvim sync completed (plugins installed).'));
-  } catch (e) {
-    console.log(chalk.red('❌ Lazy.nvim sync failed — check nvim logs or run `:Lazy sync` inside nvim.`'));
-    // still continue; user can inspect
+  } catch {
+    console.log(chalk.red('❌ Lazy.nvim sync failed — you can rerun with :Lazy sync.'));
   }
 
   console.log(chalk.green('\n🎉 Plugin installation step done.\n'));
 }
+
 
 // ---------------- Step UI ----------------
 async function showStep(n, total, label) {
