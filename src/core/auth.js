@@ -10,15 +10,21 @@ import open from 'open';
 
 const config = new Conf({ projectName: 'fkneo-cli' });
 
+/**
+ * Authenticate GitHub user without killing the CLI.
+ * Returns:
+ *   { success: true } → user authenticated
+ *   { success: false, reason: 'quit' } → user chose to quit
+ *   { success: false, reason: 'error', message } → API or network error
+ */
 export async function authenticateUser() {
   let username = config.get('github.username');
   let token = config.get('github.token');
 
   if (username && token) {
-    return;
+    return { success: true };
   }
 
-  // 1️⃣ Header box
   console.log(
     boxen(chalk.cyanBright('🔑 GitHub Authentication Required'), {
       padding: 1,
@@ -28,7 +34,7 @@ export async function authenticateUser() {
     })
   );
 
-  // Check for stored credentials
+  // 🔹 Username
   if (!username) {
     username = await input({ message: chalk.yellowBright('Enter your GitHub username:') });
     config.set('github.username', username);
@@ -43,6 +49,7 @@ export async function authenticateUser() {
     );
   }
 
+  // 🔹 Token
   if (!token) {
     token = await password({
       message: chalk.yellowBright('Enter your GitHub Personal Access Token (read:user, public_repo):'),
@@ -86,7 +93,7 @@ export async function authenticateUser() {
           borderColor: 'green',
         })
       );
-      return; // Continue CLI flow
+      return { success: true };
     }
 
     if (res.status === 404) {
@@ -120,16 +127,16 @@ export async function authenticateUser() {
           );
         } else if (choice === 'retry') {
           return await authenticateUser();
-        } else {
+        } else if (choice === 'quit') {
           console.log(
-            boxen(chalk.redBright('👋 Exiting setup.'), {
+            boxen(chalk.redBright('👋 Exiting setup (user canceled).'), {
               padding: 1,
               margin: { top: 1, bottom: 1 },
               borderStyle: 'round',
               borderColor: 'red',
             })
           );
-          process.exit(0);
+          return { success: false, reason: 'quit' };
         }
       }
     }
@@ -142,17 +149,10 @@ export async function authenticateUser() {
         borderColor: 'red',
       })
     );
-    process.exit(1);
+
+    return { success: false, reason: 'error', message: `Unexpected status ${res.status}` };
   } catch (err) {
     spinner.stop();
-    console.error(
-      boxen(chalk.redBright(`❌ Error checking GitHub API: ${err.message}`), {
-        padding: 1,
-        margin: { top: 1, bottom: 1 },
-        borderStyle: 'round',
-        borderColor: 'red',
-      })
-    );
-    process.exit(1);
+    return { success: false, reason: 'error', message: err.message };
   }
 }
