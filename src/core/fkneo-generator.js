@@ -1,4 +1,3 @@
-
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -27,7 +26,9 @@ function appendAlias(aliasName, configName) {
 
   if (!content.includes(`alias ${aliasName}=`)) {
     fs.appendFileSync(rcFile, aliasLine);
-    console.log(chalk.greenBright(`✔ Alias '${aliasName}' added to ${rcFile}`));
+    console.log(
+      chalk.greenBright(`✔ Alias '${aliasName}' added to ${rcFile}`),
+    );
   } else {
     console.log(chalk.yellow(`⚠️ Alias '${aliasName}' already exists.`));
   }
@@ -54,7 +55,7 @@ function simulatePluginInstall(pluginName, totalChunks = 200) {
         barIncompleteChar: "░",
         hideCursor: true,
       },
-      cliProgress.Presets.shades_classic
+      cliProgress.Presets.shades_classic,
     );
 
     bar.start(totalChunks, 0, { speed: "0.00" });

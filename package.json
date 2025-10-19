@@ -7,10 +7,11 @@
     "fkneo": "./bin/fkneo.js"
   },
   "scripts": {
-    "start": "node ./bin/fkneo.js"
+    "start": "node ./src/index.js",
+    "format": "prettier --write ."
   },
   "dependencies": {
-    "@inquirer/prompts": "^5.5.0",
+    "@inquirer/prompts": "^7.9.0",
     "@inquirer/select": "^4.4.0",
     "axios": "^1.7.2",
     "boxen": "^8.0.1",
@@ -25,7 +26,6 @@
     "url": "^0.11.4"
   },
   "files": [
-    "bin",
     "src"
   ],
   "author": "Mayank Kumar Jha",
@@ -46,5 +46,8 @@
   "bugs": {
     "url": "https://github.com/flashcodes-themayankjha/fkneo-cli/issues"
   },
-  "homepage": "https://github.com/flashcodes-themayankjha/fkneo-cli#readme"
+  "homepage": "https://github.com/flashcodes-themayankjha/fkneo-cli#readme",
+  "devDependencies": {
+    "prettier": "^3.6.2"
+  }
 }

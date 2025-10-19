@@ -1,12 +1,12 @@
-import Conf from 'conf';
+import Conf from "conf";
 
 const config = new Conf({
-  projectName: 'fkneo-cli',
+  projectName: "fkneo-cli",
   defaults: {
-    'github.username': null,
-    'github.token': null,
-    'user.name': null,
-    'user.email': null,
+    "github.username": null,
+    "github.token": null,
+    "user.name": null,
+    "user.email": null,
   },
 });
 
