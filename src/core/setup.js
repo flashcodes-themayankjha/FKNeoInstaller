@@ -528,7 +528,7 @@ export async function runSetup() {
     const prebuiltConfigs = {
       fkvim: { name: 'FkVim', repo: 'https://github.com/TheFlashCodes/FKvim', defaultApp: 'fkvim' },
       lazyvim: { name: 'LazyVim', repo: 'https://github.com/LazyVim/starter', defaultApp: 'lazyvim' },
-      nvchad: { name: 'NVChad', repo: 'https://github.com/NvChad/NvChad', defaultApp: 'nvchad' },
+      nvchad: { name: 'NVChad', repo: 'https://github.com/NvChad/starter', defaultApp: 'nvchad' },
       lunarvim: { name: 'LunarVim', repo: 'https://github.com/LunarVim/LunarVim', defaultApp: 'lunarvim' },
     };
 
