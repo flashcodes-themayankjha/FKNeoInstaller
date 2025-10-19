@@ -2,12 +2,15 @@
 import chalk from 'chalk';
 import Conf from 'conf';
 import { runSetup } from './setup.js';
-import { runClean } from './clean.js'; // import your clean command
+import { runClean } from './clean.js';
+import { runGenerator } from './fkneo-generator.js';
 
 const config = new Conf({ projectName: 'fkneo-cli' });
 
 export async function handleCommand(cmd) {
-  switch (cmd.trim()) {
+  const input = cmd.trim().toLowerCase();
+
+  switch (input) {
     case 'help': {
       const section = (title) =>
         chalk.bgYellow.black.bold(` ${title.toUpperCase()} `);
@@ -23,6 +26,7 @@ ${section('⌘ COMMANDS')}
 
   ${chalk.greenBright('help').padEnd(15)} Print help info
   ${chalk.greenBright('setup').padEnd(15)} Start Neovim configuration setup
+  ${chalk.greenBright('generate').padEnd(15)} Create a custom Neovim setup
   ${chalk.greenBright('clean').padEnd(15)} Remove prebuilt configs, aliases, and restore backups
   ${chalk.greenBright('reset-auth').padEnd(15)} Clear saved GitHub credentials
   ${chalk.greenBright('quit').padEnd(15)} Exit the CLI
@@ -43,11 +47,21 @@ ${section('🛠️ OPTIONS')}
     }
 
     case 'setup':
+      console.log(chalk.cyanBright('\n🚀 Launching setup wizard...\n'));
       await runSetup();
+      console.log(chalk.greenBright('\n✅ Setup complete! Returning to FkNeo CLI...\n'));
+      return false;
+
+    case 'generate':
+      console.log(chalk.cyanBright('\n🧩 Starting custom generator...\n'));
+      await runGenerator();
+      console.log(chalk.greenBright('\n✅ Generation complete! Returning to FkNeo CLI...\n'));
       return false;
 
     case 'clean':
+      console.log(chalk.yellowBright('\n🧹 Starting cleanup...\n'));
       await runClean();
+      console.log(chalk.greenBright('\n✅ Cleanup complete! Returning to FkNeo CLI...\n'));
       return false;
 
     case 'reset-auth':
