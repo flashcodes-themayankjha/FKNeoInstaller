@@ -33,6 +33,36 @@ function getShellRC() {
   return path.join(os.homedir(), '.profile');
 }
 
+function ensureLocalBinInPath() {
+  const localBin = path.join(os.homedir(), '.local', 'bin');
+  const currentPath = process.env.PATH || '';
+  const rcFile = getShellRC();
+
+  // If already present, skip
+  if (currentPath.split(path.delimiter).includes(localBin)) {
+    console.log(chalk.green('✔ ~/.local/bin is already in PATH.'));
+    return;
+  }
+
+  // Append export command
+  const exportLine = `\n# Added by FkNeoInstaller\nexport PATH="$HOME/.local/bin:$PATH"\n`;
+  try {
+    fs.appendFileSync(rcFile, exportLine, 'utf8');
+    console.log(chalk.yellow(`⚠️  Added ~/.local/bin to PATH in ${rcFile}`));
+
+    // Try to reload shell config
+    try {
+      execSync(`${process.env.SHELL} -lc "source ${rcFile}"`, { stdio: 'ignore' });
+      console.log(chalk.green('✔ Shell reloaded successfully (PATH updated).'));
+    } catch {
+      console.log(chalk.cyan('ℹ️ Restart your terminal or run `source ~/.zshrc` to apply changes.'));
+    }
+  } catch (err) {
+    console.log(chalk.red(`❌ Failed to modify ${rcFile}: ${err.message}`));
+  }
+}
+
+
 
 function writeMetadata(newData) {
   const metaPath = path.join(os.homedir(), '.fkneo', 'meta.json');
@@ -450,12 +480,12 @@ async function showStep(n, total, label) {
 }
 
 // --------------------- Main flow ---------------------
+// --------------------- Main flow ---------------------
 export async function runSetup() {
   console.clear();
   console.log(chalk.black.bgYellow.bold(`\n  🧩 FkNeoInstaller v${version}  \n`));
   await checkNeovimInstalled();
   await checkNerdFontInstalled();
-
 
   try {
     // Step 1: choose type
@@ -508,18 +538,14 @@ export async function runSetup() {
     let isMain = mainOrAlias;
 
     if (!isMain) {
-      // ask alias name
       aliasName = (await input({ message: `Enter alias name for ${p.name} config:`, default: p.defaultApp })).trim();
-      // resolve existing config (backup/remove/rename)
       const resolved = await handleExistingConfig(aliasName, path.join(os.homedir(), '.config', aliasName));
       aliasName = resolved.aliasName;
-      targetDir = resolved.targetDir; // may be original or renamed/resolved
+      targetDir = resolved.targetDir;
       isMain = false;
     } else {
-      // main config chosen: check ~/.config/nvim
       const mainDir = path.join(os.homedir(), '.config', 'nvim');
       const resolved = await handleExistingConfig('nvim', mainDir);
-      // If user renamed to something other than 'nvim', treat as alias instead of main
       if (resolved.aliasName && resolved.aliasName !== 'nvim') {
         aliasName = resolved.aliasName;
         targetDir = path.join(os.homedir(), '.config', aliasName);
@@ -550,40 +576,129 @@ export async function runSetup() {
       }
     }
 
-    // Clone config
-    await cloneRepoWithDynamicProgress(p.repo, targetDir, p.name);
+    // -------------------- Clone or Install --------------------
+  
+if (choice === 'lunarvim') {
+  console.log(chalk.cyan('\n➡️ Installing LunarVim using official bootstrap script...\n'));
+  const spinner = ora('Running LunarVim installer...').start();
 
-    // Detailed plugin installs for FkVim & LazyVim
-    if (choice === 'fkvim' || choice === 'lazyvim') {
-      await installPluginsWithDetailedProgress(targetDir);
-    } else {
-      console.log(chalk.cyan('📦 NVChad/LunarVim selected: skipped detailed plugin sync (they manage plugins differently).'));
+  try {
+    // Run official LunarVim installer
+    const installer = spawn(
+      'bash',
+      [
+        '-c',
+        'curl -s https://raw.githubusercontent.com/LunarVim/LunarVim/master/utils/installer/install.sh | bash'
+      ],
+      { stdio: 'inherit' }
+    );
+
+    // Wait for installer to finish
+    await new Promise((resolve, reject) => {
+      installer.on('close', (code) => {
+        if (code === 0) {
+          spinner.succeed(chalk.green('✔ LunarVim installed successfully.'));
+          resolve();
+        } else {
+          spinner.fail(chalk.red('❌ LunarVim installation failed.'));
+          console.log(
+            chalk.cyan(
+              'You can install manually using:\n  bash <(curl -s https://raw.githubusercontent.com/LunarVim/LunarVim/master/utils/installer/install.sh)'
+            )
+          );
+          reject(new Error('Installer failed.'));
+        }
+      });
+    });
+
+    // 🧩 Ensure ~/.local/bin is in PATH
+    ensureLocalBinInPath();
+
+    // 🪪 Add alias `lvim` if binary exists
+    const localBin = path.join(os.homedir(), '.local', 'bin');
+    const lvimBinary = path.join(localBin, 'lvim');
+    const rcFile = getShellRC();
+
+    if (fs.existsSync(lvimBinary)) {
+      const aliasLine = `alias lvim="$HOME/.local/bin/lvim"`;
+      const rcContent = fs.existsSync(rcFile) ? fs.readFileSync(rcFile, 'utf8') : '';
+      if (!rcContent.includes(aliasLine)) {
+        fs.appendFileSync(rcFile, `\n# Added by FkNeoInstaller\n${aliasLine}\n`, 'utf8');
+        console.log(chalk.yellow(`⚙️  Added alias 'lvim' in ${rcFile}`));
+      }
     }
 
-    // Step 4: finalize
+    // 🧭 Verify binary availability
+    try {
+      execSync('command -v lvim', { stdio: 'ignore' });
+      console.log(chalk.green('✔ lvim command available.'));
+    } catch {
+      console.log(chalk.yellow('⚠️ lvim command not found yet — restart your terminal.'));
+    }
+
+    // 🪶 Save metadata
+    writeMetadata({
+      prebuilt: 'LunarVim',
+      main: false,
+      alias: 'lvim',
+      targetDir: path.join(os.homedir(), '.config', 'lvim'),
+      aiEnabled,
+      method: 'installer',
+      installedAt: new Date().toISOString(),
+    });
+
+  } catch (err) {
+    spinner.fail(chalk.red('❌ LunarVim installation failed.'));
+    console.log(
+      chalk.cyan(
+        '\nYou can install manually using:\n  bash <(curl -s https://raw.githubusercontent.com/LunarVim/LunarVim/master/utils/installer/install.sh)\n'
+      )
+    );
+  }
+
+} else {
+  // 🧩 Normal git-based prebuilt
+  await cloneRepoWithDynamicProgress(p.repo, targetDir, p.name);
+
+  if (choice === 'fkvim' || choice === 'lazyvim') {
+    await installPluginsWithDetailedProgress(targetDir);
+  } else if (choice === 'nvchad') {
+    console.log(chalk.cyan('📦 NVChad selected: skipping Lazy.nvim sync (it uses its own plugin manager).'));
+  }
+}
+
+
+
+        // Step 4: finalize setup
     await showStep(4, 4, 'Finalizing Setup');
 
     addShellAlias(aliasName, aliasName, isMain);
 
-    // write metadata for future cleaning
+    // Save metadata for cleanup
     writeMetadata({
       prebuilt: p.name,
       main: isMain,
       alias: aliasName,
       targetDir,
       aiEnabled,
+      method: choice === 'lunarvim' ? 'installer' : 'git',
       installedAt: new Date().toISOString(),
     });
 
-    // summary
-    const table = new Table({ head: [chalk.cyan('Key'), chalk.cyan('Value')], colWidths: [20, 60], wordWrap: true });
+    // Show summary table
+    const table = new Table({
+      head: [chalk.cyan('Key'), chalk.cyan('Value')],
+      colWidths: [20, 60],
+      wordWrap: true,
+    });
     table.push(
       ['Config', p.name],
       ['Main', isMain ? 'Yes' : 'No'],
       ['Alias', aliasName],
       ['AI', aiEnabled ? 'Enabled' : 'Disabled'],
+      ['Method', choice === 'lunarvim' ? 'Installer Script' : 'Git Clone'],
       ['Location', targetDir],
-      ['Launch', isMain ? 'nvim' : aliasName]
+      ['Launch', isMain ? 'nvim' : choice == 'lunarvim' ? ' lvim ' : aliasName]
     );
 
     console.log(chalk.bgYellow.black('\n FkNeoInstaller Summary \n'));
@@ -600,3 +715,4 @@ export async function runSetup() {
     process.exit(1);
   }
 }
+
