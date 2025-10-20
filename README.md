@@ -37,13 +37,13 @@ Install `FkNeoInstaller` globally using your favorite package manager:
 
 ```bash
 # With npm
-npm install -g FkNeoInstaller
+npm install -g fkneo-installer
 
 # With yarn
-yarn global add FkNeoInstaller
+yarn global add fkneo-installer
 
 # With pnpm
-pnpm add -g FkNeoInstaller
+pnpm add -g fkneo-installer
 ```
 
 ## Usage
