@@ -4,7 +4,7 @@
   <a href="https://github.com/flashcodes-themayankjha/fkneo-cli">
     <img src="https://img.shields.io/github/stars/flashcodes-themayankjha/fkneo-cli.svg?style=social" alt="GitHub Stars">
   </a>
-  <a href="https://www.npmjs.com/package/FkNeoInstaller">
+  <a href="https://www.npmjs.com/package/fkneo-installer">
     <img src="https://img.shields.io/npm/v/FkNeoInstaller.svg" alt="npm version">
   </a>
 </p>
