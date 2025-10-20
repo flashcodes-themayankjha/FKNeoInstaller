@@ -1,11 +1,11 @@
 {
   "name": "fkneo-installer",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Dynamic Neovim setup wizard CLI",
   "type": "module",
   "bin": {
     "fkneo": "./bin/fkneo.js",
-     "FkNeoInstaller": "./bin/fkneo.js"
+    "FkNeoInstaller": "./bin/fkneo.js"
   },
   "scripts": {
     "start": "node ./src/index.js",
@@ -46,7 +46,6 @@
   },
   "bugs": {
     "url": "https://github.com/flashcodes-themayankjha/FkNeoInstaller/issues"
-    
   },
   "homepage": "https://github.com/flashcodes-themayankjha/FkNeoInstaller#readme",
   "devDependencies": {
