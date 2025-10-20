@@ -11,7 +11,7 @@ import { confirm } from "@inquirer/prompts";
 export async function checkNeovimInstalled() {
   try {
     execSync("nvim --version", { stdio: "ignore" });
-    console.log(chalk.green("✅ Neovim detected."));
+    console.log(chalk.green("\n 󰄴 Neovim detected."));
     return { success: true };
   } catch {
     console.log(chalk.red("\n❌ Neovim not found on your system."));
@@ -118,7 +118,7 @@ export async function checkNerdFontInstalled() {
     );
 
     if (hasNerdFont) {
-      console.log(chalk.green("✅ Nerd Font detected."));
+      console.log(chalk.green(" 󰄴 Nerd Font detected.\n"));
       return { success: true };
     }
 

@@ -180,10 +180,10 @@ export async function runSetup() {
       method: choice === "lunarvim" ? "installer" : "git",
       installedAt: new Date().toISOString(),
     });
-
+    
     // Summary Table
     const table = new Table({
-      head: [chalk.cyan("Key"), chalk.cyan("Value")],
+      head: [chalk.hex('#fab387').bold("Key"), chalk.hex('##b4befe').bold("Value")],
       colWidths: [20, 60],
       wordWrap: true,
     });

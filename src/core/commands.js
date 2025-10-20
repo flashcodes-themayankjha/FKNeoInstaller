@@ -88,28 +88,28 @@ ${section("🛠️  INSTALL FLAGS")}
         console.log(chalk.bgBlueBright.black.bold("\n 💠  FkNeo INSTALL MODE HELP  💠 \n"));
 
         console.log(`
-${chalk.bgMagenta.black.bold(" ⚙️  HOW TO USE ")}
+${chalk.bgMagenta.black.bold(" ⚙️ HOW TO USE ")}
 
   ${chalk.cyanBright("fkneo install")} ${chalk.white("<preset> [options]")}
 
 ${chalk.bgGreen.black.bold(" 📦 AVAILABLE PRESETS ")}
-  ${chalk.yellow("--fkvim")}       → Install FkVim (https://github.com/TheFlashCodes/FKvim)
-  ${chalk.yellow("--lazyvim")}     → Install LazyVim (https://github.com/LazyVim/starter)
-  ${chalk.yellow("--nvchad")}      → Install NvChad (https://github.com/NvChad/starter)
-  ${chalk.yellow("--lunarvim")}    → Install LunarVim (https://github.com/LunarVim/LunarVim)
+  ${chalk.yellow("\n  --fkvim")}          → Install FkVim (https://github.com/TheFlashCodes/FKvim)
+  ${chalk.yellow("--lazyvim")}        → Install LazyVim (https://github.com/LazyVim/starter)
+  ${chalk.yellow("--nvchad")}         → Install NvChad (https://github.com/NvChad/starter)
+  ${chalk.yellow("--lunarvim")}       → Install LunarVim (https://github.com/LunarVim/LunarVim)
 
 ${chalk.bgYellow.black.bold(" ⚡ OPTIONS ")}
-  ${chalk.yellow("--alias <name>")}   → Use custom name for the config
+  ${chalk.yellow("\n  --alias <name>")}   → Use custom name for the config
   ${chalk.yellow("--main")}           → Make it your main Neovim setup (~/.config/nvim)
   ${chalk.yellow("--help")}           → Show this help screen
 
-${chalk.bgCyan.black.bold(" 🌈 EXAMPLES ")}
-  ${chalk.cyan("fkneo install --fkvim")}
+${chalk.bgCyan.black.bold(" 🌈 EXAMPLES  ")}
+  ${chalk.cyan("\n  fkneo install --fkvim")}
   ${chalk.cyan("fkneo install --lazyvim --main")}
   ${chalk.cyan("fkneo install --nvchad --alias nvcustom")}
   ${chalk.cyan("fkneo install --lunarvim --main --alias lunar")}
 
-${chalk.bgGray.black.bold(" 💡 TIP ")}
+${chalk.bgMagenta.black.bold(" 💡 TIP  \n")}
   Run ${chalk.green("fkneo help")} for the full command list.
 `);
         return false;

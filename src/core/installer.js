@@ -55,12 +55,12 @@ export async function cloneRepoWithDynamicProgress(repo, targetDir, name) {
         bar.update(100, { task: chalk.green(`${name} Cloned`) });
         bar.stop();
         console.log(
-          chalk.green(`✔ ${name} cloned successfully at ${targetDir}`),
+          chalk.green(` \n ✔ ${name} cloned successfully at ${targetDir} \n `),
         );
         resolve();
       } else {
         bar.stop();
-        console.log(chalk.red(`❌ Git clone failed with code ${code}`));
+        console.log(chalk.red(`❌ Git clone failed with code ${code} \n`));
         reject(new Error("Git clone failed"));
       }
     });
@@ -83,7 +83,7 @@ export async function installGemini() {
 // ------------- Multi-line plugin installation (groups + per-plugin) -------------
 export async function installPluginsWithDetailedProgress(targetDir) {
   const flamingo = "#F28FB0"; // group text
-  const cyan = "#00FFFF"; // cyan glow for progress
+  const cyan = "#f2d5cf"; // cyan glow for progress
   const peach = "#F9E2AF"; // badge bg
   const softLavender = "#b4befe";
 
@@ -134,7 +134,7 @@ export async function installPluginsWithDetailedProgress(targetDir) {
   let overallProgress = 0;
 
   for (const group of groups) {
-    const badge = chalk.bgHex(peach).black.bold(" Installing plugin: ");
+    const badge = chalk.bgHex(peach).black.bold("\n Installing plugin: ");
     console.log(
       "\n" + badge + " " + chalk.hex(flamingo).bold(group.name) + "\n",
     );
