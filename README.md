@@ -1,11 +1,11 @@
-# FkNeo CLI
+# FkNeoInstaller
 
 <p align="center">
   <a href="https://github.com/flashcodes-themayankjha/fkneo-cli">
     <img src="https://img.shields.io/github/stars/flashcodes-themayankjha/fkneo-cli.svg?style=social" alt="GitHub Stars">
   </a>
-  <a href="https://www.npmjs.com/package/fkneo-cli">
-    <img src="https://img.shields.io/npm/v/fkneo-cli.svg" alt="npm version">
+  <a href="https://www.npmjs.com/package/FkNeoInstaller">
+    <img src="https://img.shields.io/npm/v/FkNeoInstaller.svg" alt="npm version">
   </a>
 </p>
 
@@ -15,9 +15,9 @@
 
 ---
 
-## Why FkNeo CLI?
+## Why FkNeoInstaller?
 
-`fkneo-cli` is a powerful command-line tool that simplifies setting up and managing your Neovim configuration. Whether you're a seasoned developer or new to Neovim, FkNeo helps you get a feature-rich, customized environment running in minutes. Skip the manual setup and get back to coding.
+`FkNeoInstaller` is a powerful command-line tool that simplifies setting up and managing your Neovim configuration. Whether you're a seasoned developer or new to Neovim, FkNeo helps you get a feature-rich, customized environment running in minutes. Skip the manual setup and get back to coding.
 
 ## Features
 
@@ -33,17 +33,17 @@
 
 ## Installation
 
-Install `fkneo-cli` globally using your favorite package manager:
+Install `FkNeoInstaller` globally using your favorite package manager:
 
 ```bash
 # With npm
-npm install -g fkneo-cli
+npm install -g FkNeoInstaller
 
 # With yarn
-yarn global add fkneo-cli
+yarn global add FkNeoInstaller
 
 # With pnpm
-pnpm add -g fkneo-cli
+pnpm add -g FkNeoInstaller
 ```
 
 ## Usage
@@ -54,7 +54,7 @@ Launch the interactive CLI by running:
 fkneo
 ```
 
-This will start the FkNeo CLI, where you can use various commands to manage your Neovim setup.
+This will start the FkNeoInstaller, where you can use various commands to manage your Neovim setup.
 
 ### Quick Install
 
@@ -89,7 +89,7 @@ fkneo install --nvchad --alias mychad
 
 ## Configuration
 
-`fkneo-cli` stores its configuration in `~/.config/fkneo-cli/config.json`. This includes authentication tokens and metadata about your installed setups. You can clear this configuration using the `reset-auth` command.
+`FkNeoInstaller` stores its configuration in `~/.config/FkNeoInstaller/config.json`. This includes authentication tokens and metadata about your installed setups. You can clear this configuration using the `reset-auth` command.
 
 ## Contributing
 
