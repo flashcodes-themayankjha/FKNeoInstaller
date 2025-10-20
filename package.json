@@ -1,5 +1,5 @@
 {
-  "name": "fkneo-cli",
+  "name": "FKNeoInstaller",
   "version": "0.1.3",
   "description": "Dynamic Neovim setup wizard CLI",
   "type": "module",
