@@ -4,6 +4,9 @@ import Conf from "conf";
 import os from "os";
 import path from "path";
 import fs from "fs";
+import ora from "ora";
+import { confirm } from "@inquirer/prompts";
+
 import { runSetup } from "./setup.js";
 import { runClean } from "./clean.js";
 import { runGenerator } from "./fkneo-generator.js";
@@ -13,8 +16,6 @@ import { installNvChad } from "../prebuilt/nvchad.js";
 import { installLunarVim } from "../prebuilt/lunarvim.js";
 import { addShellAlias } from "../utils/alias.js";
 import { writeMetadata } from "../utils/meta.js";
-import { confirm } from "@inquirer/prompts";
-import ora from "ora";
 
 const config = new Conf({ projectName: "fkneo-cli" });
 
@@ -23,40 +24,43 @@ export async function handleCommand(cmd) {
   const [command, ...args] = input.split(/\s+/);
   const flags = new Set(args);
 
-  switch (command) {
-    // ---------------- HELP ----------------
-    case "help": {
-      const section = (title) =>
-        chalk.bgYellow.black.bold(` ${title.toUpperCase()} `);
+  const section = (title, color = chalk.bgYellow.black) =>
+    color.bold(` ${title.toUpperCase()} `);
 
+  // ---------------- HELP ----------------
+  switch (command) {
+    case "help": {
       const usage = `
-${section("⚙️ USAGE")}
+${section("⚙️  USAGE")}
 
   ${chalk.cyanBright("$ fkneo-cli")} ${chalk.white("<command> [option]")}
 `;
 
       const commands = `
-${section("⌘ COMMANDS")}
+${section("⌘  COMMANDS")}
 
-  ${chalk.greenBright("help").padEnd(15)} Print help info
-  ${chalk.greenBright("setup").padEnd(15)} Start Neovim configuration setup
-  ${chalk.greenBright("install").padEnd(15)} Quick install of a Neovim config
-  ${chalk.greenBright("generate").padEnd(15)} Create a custom Neovim setup
-  ${chalk.greenBright("clean").padEnd(15)} Remove prebuilt configs and aliases
-  ${chalk.greenBright("reset-auth").padEnd(15)} Clear saved GitHub credentials
-  ${chalk.greenBright("quit").padEnd(15)} Exit the CLI
+  ${chalk.greenBright("help").padEnd(15)} Show help menu
+  ${chalk.greenBright("setup").padEnd(15)} Launch guided setup wizard
+  ${chalk.greenBright("install").padEnd(15)} Install a Neovim preset
+  ${chalk.greenBright("generate").padEnd(15)} Generate a custom config
+  ${chalk.greenBright("clean").padEnd(15)} Remove installed presets
+  ${chalk.greenBright("reset-auth").padEnd(15)} Clear GitHub credentials
+  ${chalk.greenBright("quit").padEnd(15)} Exit CLI
   ${chalk.greenBright("exit").padEnd(15)} Same as quit
 `;
 
       const options = `
-${section("🛠️ INSTALL FLAGS")}
+${section("🛠️  INSTALL FLAGS")}
 
   ${chalk.yellowBright("--fkvim").padEnd(20)} Install FkVim
   ${chalk.yellowBright("--lazyvim").padEnd(20)} Install LazyVim
   ${chalk.yellowBright("--nvchad").padEnd(20)} Install NvChad
   ${chalk.yellowBright("--lunarvim").padEnd(20)} Install LunarVim
-  ${chalk.yellowBright("--alias <name>").padEnd(20)} Use a custom CLI alias
-  ${chalk.yellowBright("--main").padEnd(20)} Set this config as main (~/.config/nvim)
+  ${chalk.yellowBright("--alias <name>").padEnd(20)} Use custom CLI alias
+  ${chalk.yellowBright("--main").padEnd(20)} Set config as main (~/.config/nvim)
+  ${chalk.yellowBright("--help").padEnd(20)} Show install-specific help
+
+💡 Tip: Run ${chalk.cyan("fkneo install --help")} for install-only help.
 `;
 
       console.log(`${usage}${commands}${options}`);
@@ -67,84 +71,85 @@ ${section("🛠️ INSTALL FLAGS")}
     case "setup":
       console.log(chalk.cyanBright("\n🚀 Launching setup wizard...\n"));
       await runSetup();
-      console.log(
-        chalk.greenBright("\n✅ Setup complete! Returning to FkNeo CLI...\n"),
-      );
+      console.log(chalk.greenBright("\n✅ Setup complete! Returning to FkNeo CLI...\n"));
       return false;
 
     // ---------------- GENERATOR ----------------
     case "generate":
       console.log(chalk.cyanBright("\n🧩 Starting custom generator...\n"));
       await runGenerator();
-      console.log(
-        chalk.greenBright(
-          "\n✅ Generation complete! Returning to FkNeo CLI...\n",
-        ),
-      );
+      console.log(chalk.greenBright("\n✅ Generation complete! Returning to FkNeo CLI...\n"));
       return false;
 
     // ---------------- INSTALL ----------------
     case "install": {
-      console.log(chalk.bgYellow.black.bold("\n  ⚙️  Quick Install Mode  \n"));
+      // 🎯 Show help if no flags OR --help
+      if (args.length === 0 || flags.has("--help")) {
+        console.log(chalk.bgBlueBright.black.bold("\n 💠  FkNeo INSTALL MODE HELP  💠 \n"));
+
+        console.log(`
+${chalk.bgMagenta.black.bold(" ⚙️  HOW TO USE ")}
+
+  ${chalk.cyanBright("fkneo install")} ${chalk.white("<preset> [options]")}
+
+${chalk.bgGreen.black.bold(" 📦 AVAILABLE PRESETS ")}
+  ${chalk.yellow("--fkvim")}       → Install FkVim (https://github.com/TheFlashCodes/FKvim)
+  ${chalk.yellow("--lazyvim")}     → Install LazyVim (https://github.com/LazyVim/starter)
+  ${chalk.yellow("--nvchad")}      → Install NvChad (https://github.com/NvChad/starter)
+  ${chalk.yellow("--lunarvim")}    → Install LunarVim (https://github.com/LunarVim/LunarVim)
+
+${chalk.bgYellow.black.bold(" ⚡ OPTIONS ")}
+  ${chalk.yellow("--alias <name>")}   → Use custom name for the config
+  ${chalk.yellow("--main")}           → Make it your main Neovim setup (~/.config/nvim)
+  ${chalk.yellow("--help")}           → Show this help screen
+
+${chalk.bgCyan.black.bold(" 🌈 EXAMPLES ")}
+  ${chalk.cyan("fkneo install --fkvim")}
+  ${chalk.cyan("fkneo install --lazyvim --main")}
+  ${chalk.cyan("fkneo install --nvchad --alias nvcustom")}
+  ${chalk.cyan("fkneo install --lunarvim --main --alias lunar")}
+
+${chalk.bgGray.black.bold(" 💡 TIP ")}
+  Run ${chalk.green("fkneo help")} for the full command list.
+`);
+        return false;
+      }
+
+      console.log(chalk.bgYellow.black.bold("\n ⚙️  FkNeo Quick Install Mode \n"));
 
       const home = os.homedir();
       const configDir = path.join(home, ".config");
 
       const installs = {
-        "--fkvim": {
-          fn: installFkVim,
-          name: "FkVim",
-          repo: "https://github.com/TheFlashCodes/FKvim",
-        },
-        "--lazyvim": {
-          fn: installLazyVim,
-          name: "LazyVim",
-          repo: "https://github.com/LazyVim/starter",
-        },
-        "--nvchad": {
-          fn: installNvChad,
-          name: "NvChad",
-          repo: "https://github.com/NvChad/starter",
-        },
-        "--lunarvim": {
-          fn: installLunarVim,
-          name: "LunarVim",
-          repo: "https://github.com/LunarVim/LunarVim",
-        },
+        "--fkvim": { fn: installFkVim, name: "FkVim", repo: "https://github.com/TheFlashCodes/FKvim" },
+        "--lazyvim": { fn: installLazyVim, name: "LazyVim", repo: "https://github.com/LazyVim/starter" },
+        "--nvchad": { fn: installNvChad, name: "NvChad", repo: "https://github.com/NvChad/starter" },
+        "--lunarvim": { fn: installLunarVim, name: "LunarVim", repo: "https://github.com/LunarVim/LunarVim" },
       };
 
-      // Identify which preset to install
       const selected = Object.keys(installs).find((f) => flags.has(f));
       if (!selected) {
-        console.log(
-          chalk.redBright(
-            "❌ Please specify a preset flag (e.g., --fkvim, --lazyvim, --nvchad, --lunarvim)\n",
-          ),
-        );
+        console.log(chalk.bgRed.white.bold("\n ❌ Missing flag! \n"));
+        console.log(chalk.yellowBright("Use one of: --fkvim, --lazyvim, --nvchad, --lunarvim"));
+        console.log(chalk.gray("Try 'fkneo install --help' for details.\n"));
         return false;
       }
 
-      // Extract custom alias (if any)
       const aliasIndex = args.indexOf("--alias");
-      const customAlias =
-        aliasIndex !== -1 && args[aliasIndex + 1]
-          ? args[aliasIndex + 1]
-          : null;
+      const customAlias = aliasIndex !== -1 && args[aliasIndex + 1] ? args[aliasIndex + 1] : null;
 
       const { fn, name, repo } = installs[selected];
       const alias = customAlias || name.toLowerCase();
       const targetDir = path.join(configDir, alias);
 
-      // Check existing directory
+      // Confirm overwrite
       if (fs.existsSync(targetDir)) {
         const overwrite = await confirm({
-          message: chalk.yellow(
-            `⚠️ Directory ${targetDir} already exists. Overwrite?`,
-          ),
+          message: chalk.yellow(`⚠️ Directory ${targetDir} already exists. Overwrite?`),
           default: false,
         });
         if (!overwrite) {
-          console.log(chalk.redBright("❌ Installation aborted."));
+          console.log(chalk.redBright("❌ Installation cancelled.\n"));
           return false;
         }
         fs.rmSync(targetDir, { recursive: true, force: true });
@@ -155,25 +160,18 @@ ${section("🛠️ INSTALL FLAGS")}
       await fn(repo, targetDir, name, alias);
       spinner.succeed(chalk.greenBright(`${name} installed.`));
 
-      // Create alias
       addShellAlias(alias, alias, false);
 
-      // Handle --main flag (make it primary nvim config)
       const setAsMain = flags.has("--main");
       const nvimDir = path.join(configDir, "nvim");
 
       if (setAsMain) {
-        if (fs.existsSync(nvimDir)) {
-          fs.rmSync(nvimDir, { recursive: true, force: true });
-        }
+        if (fs.existsSync(nvimDir)) fs.rmSync(nvimDir, { recursive: true, force: true });
         fs.symlinkSync(targetDir, nvimDir, "dir");
-        console.log(
-          chalk.greenBright(`\n⭐ ${name} is now your primary Neovim config!`),
-        );
+        console.log(chalk.greenBright(`\n⭐ ${name} set as your primary Neovim config!`));
         console.log(chalk.gray(`→ Symlinked ~/.config/nvim → ${targetDir}\n`));
       }
 
-      // Metadata
       writeMetadata({
         prebuilt: name,
         alias,
@@ -183,7 +181,7 @@ ${section("🛠️ INSTALL FLAGS")}
         isMain: setAsMain,
       });
 
-      console.log(chalk.greenBright(`\n✅ ${name} installed successfully!`));
+      console.log(chalk.bgGreen.black.bold(`\n ✅ ${name} installation complete! \n`));
       console.log(chalk.gray(`→ Location: ${targetDir}`));
       console.log(chalk.gray(`→ Launch: ${alias}\n`));
       return false;
@@ -191,11 +189,9 @@ ${section("🛠️ INSTALL FLAGS")}
 
     // ---------------- CLEAN ----------------
     case "clean":
-      console.log(chalk.yellowBright("\n🧹 Starting cleanup...\n"));
+      console.log(chalk.yellowBright("\n🧹 Cleaning up...\n"));
       await runClean();
-      console.log(
-        chalk.greenBright("\n✅ Cleanup complete! Returning to FkNeo CLI...\n"),
-      );
+      console.log(chalk.greenBright("\n✅ Cleanup complete! Returning to FkNeo CLI...\n"));
       return false;
 
     // ---------------- RESET AUTH ----------------
@@ -212,11 +208,8 @@ ${section("🛠️ INSTALL FLAGS")}
 
     // ---------------- DEFAULT ----------------
     default:
-      console.log(
-        chalk.redBright(
-          '❌ Unknown command. Type "help" to see available options.\n',
-        ),
-      );
+      console.log(chalk.bgRed.white.bold(`\n ❌ Unknown command: ${cmd} \n`));
+      console.log(chalk.gray("Type 'help' to see available options.\n"));
       return false;
   }
 }

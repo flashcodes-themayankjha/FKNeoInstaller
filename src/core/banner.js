@@ -40,7 +40,6 @@ export async function startBanner(username) {
 
   const infoBox = boxen("Your dynamic Neovim setup wizard", {
     title: `FkNeo CLI ${version}`,
-    padding: 1,
     borderStyle: "round",
     borderColor: "magenta",
     titleAlignment: "center",
