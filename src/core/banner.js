@@ -41,7 +41,7 @@ export async function startBanner(username) {
 
   // 3️⃣ Info box (also padded)
   const infoBox = boxen("Your dynamic Neovim setup wizard", {
-    title: `FkNeo CLI ${version}`,
+    title: `FkNeoInstaller  ${version}`,
     padding: 1,
     borderStyle: "round",
     borderColor: "magenta",
@@ -54,7 +54,7 @@ export async function startBanner(username) {
   if (username) {
     console.log(
       "\n" +
-        chalk.bgYellow.black.bold(" 👤 Logged: ") +
+        chalk.bgYellow.black.bold(" 👤 Logged in as : ") +
         " " +
         chalk.greenBright.bold(username) +
         "\n"
